@@ -1,11 +1,10 @@
 {
-    "name": "sharelist-plugin-aliyundrive",
-    "version": "0.2.4",
-    "private": true,
-    "scripts": {
-      "build": "echo \"\" && exit ",
-      "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path .",
-      "release": "node ../../scripts/release.js"
-    }
+  "name": "sharelist-plugin-aliyundrive",
+  "version": "0.2.5",
+  "private": true,
+  "scripts": {
+    "build": "echo \"\" && exit ",
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s --commit-path .",
+    "release": "node ../../scripts/release.js"
   }
-  
+}

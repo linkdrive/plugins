@@ -53,7 +53,8 @@
    if( onlyList ){
     await updateList()
     step('\nCommitting changes...')
-    await run('git', ['commit', '-am', `docs: update list.json`])
+    await run('git', ['add', '-A'])
+    await run('git', ['commit', '-m', `docs: update list.json`])
 
     step('\nPushing to GitHub...')
     await run('git', ['push', remote, 'master'])

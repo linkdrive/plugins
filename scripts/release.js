@@ -56,7 +56,6 @@
     await run('git', ['commit', '-am', `docs: update list.json`])
 
     step('\nPushing to GitHub...')
-    await run('git', ['push', remote, `refs/tags/${tag}`])
     await run('git', ['push', remote, 'master'])
   
    }

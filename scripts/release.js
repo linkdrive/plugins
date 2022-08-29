@@ -58,7 +58,7 @@
 
     step('\nPushing to GitHub...')
     await run('git', ['push', remote, 'master'])
-  
+    return
    }
 
    let targetVersion = args._[0]

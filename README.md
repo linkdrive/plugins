@@ -22,7 +22,7 @@
 ## Filter
 | Package                                           | Version (click for changelogs)                                                                                                       |
 | ------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
-| [BaseFilter](packages/base-filter/index.js)         | [![plugin-base-filter version](https://img.shields.io/github/package-json/v/linkdrive/sharelist-plugin?filename=packages%2Fbase-filter%2Fpackage.json&label=%20&logo=%20&style=flat-square&color=blue)](packages/base-filter/CHANGELOG.md)             |
+| [FileFilter](packages/filefilter/index.js)         | [![plugin-filefilter version](https://img.shields.io/github/package-json/v/linkdrive/sharelist-plugin?filename=packages%2Ffilefilter%2Fpackage.json&label=%20&logo=%20&style=flat-square&color=blue)](packages/filefilter/CHANGELOG.md)             |
 
 
 ## Contribution

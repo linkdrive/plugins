@@ -7,6 +7,7 @@
 // @author       reruin@gmail.com
 // @supportURL   https://github.com/reruin/sharelist
 // @updateURL    https://github.com/linkdrive/sharelist-plugin/blob/master/packages/baidu/index.js
+// @icon         https://nd-static.bdstatic.com/m-static/wp-brand/favicon.ico
 //===/Sharelist==
 
 const API = 'https://pan.baidu.com/rest/2.0/xpan'

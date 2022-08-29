@@ -7,6 +7,7 @@
 // @author       reruin@gmail.com
 // @supportURL   https://github.com/reruin/sharelist
 // @updateURL    https://github.com/linkdrive/sharelist-plugin/blob/master/packages/ctc/index.js
+// @icon         https://cloud.189.cn/web/logo.ico
 //===/Sharelist==
 
 const API_ENDPOINT = 'https://cloud.189.cn'

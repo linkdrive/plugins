@@ -7,6 +7,7 @@
 // @author       reruin@gmail.com
 // @supportURL   https://github.com/reruin/sharelist
 // @updateURL    https://github.com/linkdrive/sharelist-plugin/blob/master/packages/googledrive/index.js
+// @icon         https://ssl.gstatic.com/images/branding/product/1x/drive_2020q4_48dp.png
 //===/Sharelist==
 
 /**

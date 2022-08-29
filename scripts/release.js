@@ -24,6 +24,8 @@
   
  const commitPath = args['commit-path']
  
+ const onlyList = args.list
+
  /**
   * @type {import('semver').ReleaseType[]}
   */
@@ -48,6 +50,17 @@
  const step = (msg) => console.log(chalk.cyan(msg))
  
  async function main() {
+   if( onlyList ){
+    await updateList()
+    step('\nCommitting changes...')
+    await run('git', ['commit', '-am', `docs: update list.json`])
+
+    step('\nPushing to GitHub...')
+    await run('git', ['push', remote, `refs/tags/${tag}`])
+    await run('git', ['push', remote, 'master'])
+  
+   }
+
    let targetVersion = args._[0]
  
    if (!targetVersion) {
@@ -164,6 +177,9 @@
 
   const md5 = content => crypto.createHash('md5').update(content).digest("hex")
 
+  function createReadMe(){
+
+  }
  function updateList(){
     let filepath = path.join( __dirname ,'../packages')
     let pluginsData = fs.readdirSync(filepath).map((name) => {
@@ -203,7 +219,7 @@
       return meta
     })
 
-    console.log(pluginsData)
+    createReadMe(pluginsData)
     fs.writeFileSync(path.join( __dirname ,'../list.json'),JSON.stringify(pluginsData))
  }
 

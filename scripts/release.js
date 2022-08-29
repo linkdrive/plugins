@@ -1,18 +1,17 @@
-
-
  const execa = require('execa')
  const path = require('path')
  const fs = require('fs')
- const args = require('minimist')(process.argv.slice(2))
  const semver = require('semver')
  const chalk = require('chalk')
  const prompts = require('prompts')
- 
+ const crypto = require('crypto')
+ const args = require('minimist')(process.argv.slice(2))
+
  const pkgDir = process.cwd()
  const pkgPath = path.resolve(pkgDir, 'package.json')
  
  const remote = 'origin'
- 
+ const HOST = 'https://github.com/linkdrive/sharelist-plugin/blob/master'
  /**
   * @type {{ name: string, version: string }}
   */
@@ -155,8 +154,59 @@
    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'))
    pkg.version = version
    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n')
+   
+   // update content {{version}}
+  //  const filepath = path.resolve(pkgDir, 'index.js')
+  //  let content = fs.readFileSync(filepath, 'utf-8')
+   
+   updateList()
  }
- 
+
+  const md5 = content => crypto.createHash('md5').update(content).digest("hex")
+
+ function updateList(){
+    let filepath = path.join( __dirname ,'../packages')
+    let pluginsData = fs.readdirSync(filepath).map((name) => {
+      let pluginpath = path.join( filepath , '../packages',name,'index.js')
+
+      let pkgData = JSON.parse(fs.readFileSync(path.join( filepath , '../packages',name,'package.json'),'utf-8'))
+      let url = HOST + `/packages/${name}/index.js`
+
+      let content = fs.readFileSync(pluginpath, 'utf-8')
+
+      const metaContent = content.match(/(?<===Sharelist==)[\w\W]+(?===\/Sharelist==)/)?.[0]
+      const meta = {
+        hash: md5(content)
+      }
+  
+      if (metaContent) {
+        let pairs = metaContent.split(/[\r\n]/).filter(Boolean).map(i => i.match(/(?<=@)([^\s]+?)\s+(.*)/)).filter(Boolean)
+        for (let i of pairs) {
+          meta[i[1]] = i[2]
+        }
+      }
+      
+      let changedFlag = false
+      if( url != meta.updateURL){
+        changedFlag = true
+        content = content.replace(/(@updateURL\s+)(.*)/,($0,$1) => $1 + url)
+        meta.updateURL = url
+      }
+
+      if( pkgData.version != meta.version){
+        content = content.replace(/(@version\s+)(.*)/,($0,$1) => $1 + pkgData.version)
+      }
+
+      if( changedFlag ){
+        fs.writeFileSync(pluginpath, content)
+      }
+      return meta
+    })
+
+    console.log(pluginsData)
+    fs.writeFileSync(path.join( __dirname ,'../list.json'),JSON.stringify(pluginsData))
+ }
+
  main().catch((err) => {
    console.error(err)
  })

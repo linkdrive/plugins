@@ -1,12 +1,12 @@
 //===Sharelist===
 // @name         GoogleDrive
 // @namespace    https://github.com/reruin/sharelist
-// @version      0.2.0
+// @version      1.0.1
 // @license      MIT
 // @description  GoogleDrive
 // @author       reruin@gmail.com
 // @supportURL   https://github.com/reruin/sharelist
-// @updateURL    https://raw.githubusercontent.com/reruin/sharelist/master/packages/sharelist-plugin/lib/driver.googledrive.js
+// @updateURL    https://github.com/linkdrive/sharelist-plugin/blob/master/packages/googledrive/index.js
 //===/Sharelist==
 
 /**

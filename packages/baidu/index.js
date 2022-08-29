@@ -6,7 +6,7 @@
 // @description  Baidu Net Disk
 // @author       reruin@gmail.com
 // @supportURL   https://github.com/reruin/sharelist
-// @updateURL    https://github.com/linkdrive/sharelist-plugin/blob/master/packages/baidu/index.js
+// @updateURL    https://raw.githubusercontent.com/linkdrive/sharelist-plugin/master/packages/baidu/index.js
 // @icon         https://nd-static.bdstatic.com/m-static/wp-brand/favicon.ico
 //===/Sharelist==
 

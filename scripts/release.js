@@ -11,7 +11,7 @@
  const pkgPath = path.resolve(pkgDir, 'package.json')
  
  const remote = 'origin'
- const HOST = 'https://github.com/linkdrive/sharelist-plugin/blob/master'
+ const HOST = 'https://raw.githubusercontent.com/linkdrive/sharelist-plugin/master/packages'
  /**
   * @type {{ name: string, version: string }}
   */
@@ -186,7 +186,7 @@
       let pluginpath = path.join( filepath , '../packages',name,'index.js')
 
       let pkgData = JSON.parse(fs.readFileSync(path.join( filepath , '../packages',name,'package.json'),'utf-8'))
-      let url = HOST + `/packages/${name}/index.js`
+      let url = HOST + `/${name}/index.js`
 
       let content = fs.readFileSync(pluginpath, 'utf-8')
 

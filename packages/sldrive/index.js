@@ -1,12 +1,12 @@
 //===Sharelist===
 // @name         ShareListDrive
 // @namespace    https://github.com/reruin/sharelist
-// @version      1.0.11
+// @version      1.0.14
 // @license      MIT
 // @description  sharelist 内置的网盘系统，使用yaml/json进行描述。
 // @author       reruin@gmail.com
 // @supportURL   https://github.com/reruin/sharelist
-// @updateURL    https://github.com/linkdrive/sharelist-plugin/blob/master/packages/sldrive/index.js
+// @updateURL    https://raw.githubusercontent.com/linkdrive/sharelist-plugin/master/packages/sldrive/index.js
 //===/Sharelist==
 const yaml = require('yaml')
 

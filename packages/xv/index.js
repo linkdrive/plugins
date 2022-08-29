@@ -6,7 +6,7 @@
 // @description  sharelist 演示插件，用于挂载全球访问量排名前10的某网站
 // @author       reruin@gmail.com
 // @supportURL   https://github.com/reruin/sharelist
-// @updateURL    https://github.com/linkdrive/sharelist-plugin/blob/master/packages/xv/index.js
+// @updateURL    https://raw.githubusercontent.com/linkdrive/sharelist-plugin/master/packages/xv/index.js
 //===/Sharelist==
 
 const HOST = Buffer.from('aHR0cHM6Ly93d3cueHZpZGVvcy5jb20=', 'base64').toString();

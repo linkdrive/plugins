@@ -7,6 +7,7 @@
 // @author       reruin@gmail.com
 // @supportURL   https://github.com/reruin/sharelist
 // @updateURL    https://raw.githubusercontent.com/linkdrive/sharelist-plugin/master/packages/xv/index.js
+// @icon         https://www.xvideos.com/apple-touch-icon.png
 //===/Sharelist==
 
 const HOST = Buffer.from('aHR0cHM6Ly93d3cueHZpZGVvcy5jb20=', 'base64').toString();

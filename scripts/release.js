@@ -218,6 +218,7 @@
 
       let namespace = 'sharelist.plugin.'+name
       if( namespace != meta.namespace){
+        console.log('change namespace')
         content = content.replace(/(@namespace\s+)(.*)/,($0,$1) => $1 + namespace)
       }
 

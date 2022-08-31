@@ -10,7 +10,7 @@
   "scripts": {
     "release": "node scripts/release.js",
     "changelog": "node scripts/changelog.js",
-    "list": "node scripts/release.js --list"
+    "publist": "node scripts/release.js --list"
   },
   "devDependencies": {
     "chalk": "^4.1.2",

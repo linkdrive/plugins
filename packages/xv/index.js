@@ -1,5 +1,5 @@
 //===Sharelist===
-// @name         XV
+// @name         ⚡️XV
 // @namespace    https://github.com/reruin/sharelist
 // @version      0.1.0
 // @license      MIT

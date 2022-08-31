@@ -12,6 +12,9 @@
  
  const remote = 'origin'
  const HOST = 'https://raw.githubusercontent.com/linkdrive/sharelist-plugin/master/packages'
+
+ const HOME = 'https://github.com/linkdrive/sharelist-plugin/tree/master/packages'
+
  /**
   * @type {{ name: string, version: string }}
   */
@@ -211,6 +214,11 @@
 
       if( pkgData.version != meta.version){
         content = content.replace(/(@version\s+)(.*)/,($0,$1) => $1 + pkgData.version)
+      }
+
+      let namespace = 'sharelist.plugin.'+name
+      if( namespace != meta.namespace){
+        content = content.replace(/(@namespace\s+)(.*)/,($0,$1) => $1 + namespace)
       }
 
       if( changedFlag ){

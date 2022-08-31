@@ -1,6 +1,6 @@
 //===Sharelist===
 // @name         Local File System
-// @namespace    https://github.com/reruin/sharelist
+// @namespace    sharelist.plugin.filesystem
 // @version      1.0.0
 // @license      MIT
 // @description  挂载本地磁盘

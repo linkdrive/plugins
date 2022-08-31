@@ -1,6 +1,6 @@
 //===Sharelist===
 // @name         CMCCCloud
-// @namespace    https://github.com/reruin/sharelist
+// @namespace    sharelist.plugin.cmcc
 // @version      1.0.0
 // @license      MIT
 // @description  移动云盘

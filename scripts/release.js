@@ -213,13 +213,14 @@
       }
 
       if( pkgData.version != meta.version){
+        changedFlag = true
         content = content.replace(/(@version\s+)(.*)/,($0,$1) => $1 + pkgData.version)
       }
 
       let namespace = 'sharelist.plugin.'+name
       if( namespace != meta.namespace){
-        console.log('change namespace')
-        content = content.replace(/(@namespace\s+)(.*)/,($0,$1) => $1 + namespace)
+        changedFlag = true
+        content = content.replace(/(@namespace\s+)([^\r\n]*)/,($0,$1) => $1 + namespace)
       }
 
       if( changedFlag ){

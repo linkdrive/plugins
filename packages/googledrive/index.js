@@ -1,6 +1,6 @@
 //===Sharelist===
 // @name         GoogleDrive
-// @namespace    https://github.com/reruin/sharelist
+// @namespace    sharelist.plugin.googledrive
 // @version      1.0.1
 // @license      MIT
 // @description  GoogleDrive

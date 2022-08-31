@@ -1,6 +1,6 @@
 //===Sharelist===
 // @name         FileFilter
-// @namespace    https://github.com/reruin/sharelist
+// @namespace    sharelist.plugin.filefilter
 // @version      1.0.0
 // @license      MIT
 // @description  提供基础目录过滤、加密功能

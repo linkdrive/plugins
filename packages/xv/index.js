@@ -1,6 +1,6 @@
 //===Sharelist===
 // @name         ⚡️XV
-// @namespace    https://github.com/reruin/sharelist
+// @namespace    sharelist.plugin.xv
 // @version      0.1.0
 // @license      MIT
 // @description  sharelist 演示插件，用于挂载全球访问量排名前10的某网站

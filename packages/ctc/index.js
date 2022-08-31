@@ -1,6 +1,6 @@
 //===Sharelist===
 // @name         CTCCloud
-// @namespace    https://github.com/reruin/sharelist
+// @namespace    sharelist.plugin.ctc
 // @version      1.0.0
 // @license      MIT
 // @description  天翼云盘

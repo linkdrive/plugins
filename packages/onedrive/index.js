@@ -1,6 +1,6 @@
 //===Sharelist===
 // @name         OneDrive
-// @namespace    https://github.com/reruin/sharelist
+// @namespace    sharelist.plugin.onedrive
 // @version      0.2.4
 // @license      MIT
 // @description  OneDrive

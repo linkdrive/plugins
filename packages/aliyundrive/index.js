@@ -1,6 +1,6 @@
 //===Sharelist===
 // @name         AliyunDrive
-// @namespace    https://github.com/reruin/sharelist
+// @namespace    sharelist.plugin.aliyundrive
 // @version      0.2.6
 // @license      MIT
 // @description  Aliyun Drive

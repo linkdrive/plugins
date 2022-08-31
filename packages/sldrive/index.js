@@ -1,6 +1,6 @@
 //===Sharelist===
 // @name         ShareListDrive
-// @namespace    https://github.com/reruin/sharelist
+// @namespace    sharelist.plugin.sldrive
 // @version      1.0.14
 // @license      MIT
 // @description  sharelist 内置的网盘系统，使用yaml/json进行描述。

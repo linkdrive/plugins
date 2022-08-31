@@ -1,6 +1,6 @@
 //===Sharelist===
 // @name         BaiduNetDisk
-// @namespace    https://github.com/reruin/sharelist
+// @namespace    sharelist.plugin.baidu
 // @version      1.0.0
 // @license      MIT
 // @description  Baidu Net Disk

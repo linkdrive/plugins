@@ -1,5 +1,5 @@
 {
-  "name": "sharelist-plugin-sld",
+  "name": "@linkdrive/plugin-sldrive",
   "version": "1.0.14",
   "private": true,
   "scripts": {

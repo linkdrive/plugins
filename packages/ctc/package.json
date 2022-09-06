@@ -1,5 +1,5 @@
 {
-  "name": "sharelist-plugin-ctc",
+  "name": "@linkdrive/plugin-ctc",
   "version": "1.0.0",
   "private": true,
   "scripts": {

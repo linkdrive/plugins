@@ -1,5 +1,5 @@
 {
-  "name": "sharelist-plugin-googledrive",
+  "name": "@linkdrive/plugin-google-drive",
   "version": "1.0.1",
   "private": true,
   "scripts": {

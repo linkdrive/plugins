@@ -1,5 +1,5 @@
 {
-  "name": "sharelist-plugin-filesystem",
+  "name": "@linkdrive/plugin-file-filter",
   "version": "1.0.0",
   "private": true,
   "scripts": {

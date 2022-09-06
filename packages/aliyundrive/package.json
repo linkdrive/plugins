@@ -1,5 +1,5 @@
 {
-  "name": "sharelist-plugin-aliyundrive",
+  "name": "@linkdrive/plugin-aliyun-drive",
   "version": "0.2.6",
   "private": true,
   "scripts": {

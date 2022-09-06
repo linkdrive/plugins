@@ -1,12 +1,12 @@
 //===Sharelist===
 // @name         File System
-// @namespace    sharelist.plugin.filesystem
+// @namespace    sharelist.plugin.file-system
 // @version      1.0.0
 // @license      MIT
 // @description  挂载本地磁盘
 // @author       reruin@gmail.com
 // @supportURL   https://github.com/reruin/sharelist
-// @updateURL    https://raw.githubusercontent.com/linkdrive/sharelist-plugin/master/packages/filesystem/index.js
+// @updateURL    https://raw.githubusercontent.com/linkdrive/sharelist-plugin/master/packages/file-system/index.js
 //===/Sharelist==
 
 const { basename, dirname, posix, join } = require('path')

@@ -44,6 +44,7 @@
    'prerelease'
  ]
  
+
  const calver = (() => {
   const valid = (ver) => {
     return true
@@ -51,18 +52,19 @@
   
   const fix = d => d<=9 ? `0${d}` : `${d}`
    
-  const getValVer  = () => {
+  const getCalVer  = () => {
     const d = new Date()
     return [d.getFullYear(),d.getMonth()+1,d.getDate()]
   }
 
   const inc = (ver) => {
-    let curVer = (ver || '').split('.').filter(Boolean).map(i => parseInt(i))
-    let newVer = getValVer()
+    let curVer = (ver || '').split(/[\.\-]/).filter(Boolean).map(i => parseInt(i))
+    let newVer = getCalVer()
     if(newVer[0] == curVer[0] && newVer[1] == curVer[1] && newVer[2] == curVer[2]){
       newVer[3] = curVer[3] ? (curVer[3]+1) : 1
     }
-    return newVer.filter(Boolean).join('.')
+    console.log(curVer,newVer)
+    return newVer.slice(0,3).join('.') + (newVer[3] ? `-${newVer[3]}` : '')
   }
 
   return {

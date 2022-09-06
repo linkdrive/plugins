@@ -18,7 +18,8 @@
   * @type {{ name: string, version: string }}
   */
  const pkg = require(pkgPath)
- const pkgName = pkg.name.replace(/^@sharelist\//, '')
+ const pkgName = pkg.name.replace(/^@linkdrive\//, '')
+
  const currentVersion = pkg.version
  const isDryRun = args.dry
  
@@ -27,6 +28,8 @@
  const commitPath = args['commit-path']
  
  const onlyList = args.list
+
+ const calVer = args.cv || pkgName == 'plugins'
 
  /**
   * @type {import('semver').ReleaseType[]}
@@ -41,6 +44,32 @@
    'prerelease'
  ]
  
+ const calver = (() => {
+  const valid = (ver) => {
+    return true
+  }
+  
+  const fix = d => d<=9 ? `0${d}` : `${d}`
+   
+  const getValVer  = () => {
+    const d = new Date()
+    return [d.getFullYear(),d.getMonth()+1,d.getDate()]
+  }
+
+  const inc = (ver) => {
+    let curVer = (ver || '').split('.').filter(Boolean).map(i => parseInt(i))
+    let newVer = getValVer()
+    if(newVer[0] == curVer[0] && newVer[1] == curVer[1] && newVer[2] == curVer[2]){
+      newVer[3] = curVer[3] ? (curVer[3]+1) : 1
+    }
+    return newVer.map(fix).filter(Boolean).join('.')
+  }
+
+  return {
+    valid,inc
+  }
+ })();
+
  
  const inc = (i) => semver.inc(currentVersion, i, 'beta')
  
@@ -64,45 +93,68 @@
    }
 
    let targetVersion = args._[0]
- 
+   
    if (!targetVersion) {
      // no explicit version, offer suggestions
-     /**
-      * @type {{ release: string }}
-      */
-     const { release } = await prompts({
-       type: 'select',
-       name: 'release',
-       message: 'Select release type',
-       choices: versionIncrements
-         .map((i) => `${i} (${inc(i)})`)
-         .concat(['custom'])
-         .map((i) => ({ value: i, title: i }))
-     })
- 
-     if (release === 'custom') {
-       /**
-        * @type {{ version: string }}
-        */
-       const res = await prompts({
-         type: 'text',
-         name: 'version',
-         message: 'Input custom version',
-         initial: currentVersion
-       })
-       targetVersion = res.version
-     } else {
-       targetVersion = release.match(/\((.*)\)/)[1]
+     if(calVer){
+      const { release } = await prompts({
+        type: 'select',
+        name: 'release',
+        message: 'Select release type',
+        choices: [calver.inc(currentVersion),'custom']
+          .map((i) => ({ value: i, title: i }))
+      })
+      if (release === 'custom') {
+        const res = await prompts({
+          type: 'text',
+          name: 'version',
+          message: 'Input custom version',
+          initial: currentVersion
+        })
+        targetVersion = res.version
+      } else {
+        targetVersion = release
+      }
+
+      if (!calver.valid(targetVersion)) {
+        throw new Error(`invalid target version: ${targetVersion}`)
+      }
+     }
+     else{
+      const { release } = await prompts({
+        type: 'select',
+        name: 'release',
+        message: 'Select release type',
+        choices: versionIncrements
+          .map((i) => `${i} (${inc(i)})`)
+          .concat(['custom'])
+          .map((i) => ({ value: i, title: i }))
+      })
+  
+      if (release === 'custom') {
+        /**
+         * @type {{ version: string }}
+         */
+        const res = await prompts({
+          type: 'text',
+          name: 'version',
+          message: 'Input custom version',
+          initial: currentVersion
+        })
+        targetVersion = res.version
+      } else {
+        targetVersion = release.match(/\((.*)\)/)[1]
+      }
+
+      if (!semver.valid(targetVersion)) {
+        throw new Error(`invalid target version: ${targetVersion}`)
+      }
      }
    }
  
-   if (!semver.valid(targetVersion)) {
-     throw new Error(`invalid target version: ${targetVersion}`)
-   }
- 
    const tag =
-     pkgName === 'sharelist' ? `v${targetVersion}` : `${pkgName}@${targetVersion}`
- 
+     pkgName === 'plugins' ? `v${targetVersion}` : `${pkgName}@${targetVersion}`
+   
    if (targetVersion.includes('beta') && !args.tag) {
      /**
       * @type {{ tagBeta: boolean }}

@@ -12,7 +12,7 @@
  
  const remote = 'origin'
 
- const HOST = 'https://raw.githubusercontent.com/linkdrive/sharelist-plugin/master/packages'
+ const HOST = 'https://raw.githubusercontent.com/linkdrive/plugins/master/packages'
 
  /**
   * @type {{ name: string, version: string }}

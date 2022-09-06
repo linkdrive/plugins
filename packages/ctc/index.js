@@ -6,7 +6,7 @@
 // @description  天翼云盘
 // @author       reruin@gmail.com
 // @supportURL   https://github.com/reruin/sharelist
-// @updateURL    https://raw.githubusercontent.com/linkdrive/sharelist-plugin/master/packages/ctc/index.js
+// @updateURL    https://raw.githubusercontent.com/linkdrive/plugins/master/packages/ctc/index.js
 // @icon         https://cloud.189.cn/web/logo.ico
 //===/Sharelist==
 

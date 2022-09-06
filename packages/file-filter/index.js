@@ -6,7 +6,7 @@
 // @description  提供基础目录过滤、加密功能
 // @author       reruin@gmail.com
 // @supportURL   https://github.com/reruin/sharelist
-// @updateURL    https://raw.githubusercontent.com/linkdrive/sharelist-plugin/master/packages/file-filter/index.js
+// @updateURL    https://raw.githubusercontent.com/linkdrive/plugins/master/packages/file-filter/index.js
 //===/Sharelist==
 
 

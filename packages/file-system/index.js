@@ -6,7 +6,7 @@
 // @description  挂载本地磁盘
 // @author       reruin@gmail.com
 // @supportURL   https://github.com/reruin/sharelist
-// @updateURL    https://raw.githubusercontent.com/linkdrive/sharelist-plugin/master/packages/file-system/index.js
+// @updateURL    https://raw.githubusercontent.com/linkdrive/plugins/master/packages/file-system/index.js
 //===/Sharelist==
 
 const { basename, dirname, posix, join } = require('path')

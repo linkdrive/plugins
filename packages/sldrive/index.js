@@ -6,7 +6,7 @@
 // @description  sharelist 内置的网盘系统，使用yaml/json进行描述。
 // @author       reruin@gmail.com
 // @supportURL   https://github.com/reruin/sharelist
-// @updateURL    https://raw.githubusercontent.com/linkdrive/sharelist-plugin/master/packages/sldrive/index.js
+// @updateURL    https://raw.githubusercontent.com/linkdrive/plugins/master/packages/sldrive/index.js
 //===/Sharelist==
 const yaml = require('yaml')
 

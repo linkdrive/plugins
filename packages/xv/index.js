@@ -6,7 +6,7 @@
 // @description  sharelist 演示插件，用于挂载全球访问量排名前10的某网站
 // @author       reruin@gmail.com
 // @supportURL   https://github.com/reruin/sharelist
-// @updateURL    https://raw.githubusercontent.com/linkdrive/sharelist-plugin/master/packages/xv/index.js
+// @updateURL    https://raw.githubusercontent.com/linkdrive/plugins/master/packages/xv/index.js
 // @icon         https://www.xvideos.com/apple-touch-icon.png
 //===/Sharelist==
 

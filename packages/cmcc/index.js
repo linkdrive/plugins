@@ -6,7 +6,7 @@
 // @description  移动云盘
 // @author       reruin@gmail.com
 // @supportURL   https://github.com/reruin/sharelist
-// @updateURL    https://raw.githubusercontent.com/linkdrive/sharelist-plugin/master/packages/cmcc/index.js
+// @updateURL    https://raw.githubusercontent.com/linkdrive/plugins/master/packages/cmcc/index.js
 //===/Sharelist==
 
 

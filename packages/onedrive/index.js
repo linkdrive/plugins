@@ -6,7 +6,7 @@
 // @description  OneDrive
 // @author       reruin@gmail.com
 // @supportURL   https://github.com/reruin/sharelist
-// @updateURL    https://raw.githubusercontent.com/linkdrive/sharelist-plugin/master/packages/onedrive/index.js
+// @updateURL    https://raw.githubusercontent.com/linkdrive/plugins/master/packages/onedrive/index.js
 // @icon         https://p.sfx.ms/images/favicon.ico
 //===/Sharelist==
 

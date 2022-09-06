@@ -1,6 +1,6 @@
 {
   "name": "@linkdrive/plugins",
-  "private": true,
+  "private": false,
   "workspaces": [
     "packages/*"
   ],
@@ -22,5 +22,5 @@
     "prompts": "^2.4.1",
     "semver": "^7.3.5"
   },
-  "version": "2022.09.06.04"
+  "version": "2022.09.06.05"
 }

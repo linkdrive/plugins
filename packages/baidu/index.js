@@ -10,6 +10,8 @@
 // @icon         https://nd-static.bdstatic.com/m-static/wp-brand/favicon.ico
 //===/Sharelist==
 
+// doc: https://pan.baidu.com/union/document/basic#%E8%8E%B7%E5%8F%96%E6%96%87%E4%BB%B6%E5%88%97%E8%A1%A8
+
 const API = 'https://pan.baidu.com/rest/2.0/xpan'
 
 const ERR_CODE = {
@@ -88,7 +90,7 @@ class Manager {
     let expires_at = data.expires_in * 1000 + Date.now()
 
     credentials.access_token = data.access_token
-    credentials.refresh_token = data.refresh_token
+    // credentials.refresh_token = data.refresh_token
     credentials.expires_at = expires_at
   }
 
@@ -139,7 +141,6 @@ class Driver {
    *
    * @api public
    */
-  // doc: https://pan.baidu.com/union/document/basic#%E8%8E%B7%E5%8F%96%E6%96%87%E4%BB%B6%E5%88%97%E8%A1%A8
   async list(id, { search, orderBy, perPage, nextPage } = {}) {
 
     let [fid, isFile] = getRealId(id)

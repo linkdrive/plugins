@@ -1,5 +1,5 @@
 //===Sharelist===
-// @name         Local File System
+// @name         File System
 // @namespace    sharelist.plugin.filesystem
 // @version      1.0.0
 // @license      MIT

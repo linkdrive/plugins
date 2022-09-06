@@ -338,7 +338,7 @@ class Driver {
       if (data.error) this.app.error({ message: data.error.message })
 
       //extract token from @odata.nextLink
-      skipToken = data['@odata.nextLink']?.match(/skiptoken=([a-z0-9A-Z!_]+)/)?.[1]
+      skipToken = data['@odata.nextLink']?.match(/skiptoken=([a-z0-9A-Z!_]+)/i)?.[1]
       data.value.forEach((i) => {
         let item = {
           id: i.id,
@@ -654,7 +654,6 @@ class Driver {
       uploadUrl = atob(uploadId)
       let { data } = await this.app.request(uploadUrl)
       if (data.error) app.error({ message: data.error.message })
-      console.log(data)
       //upload session has expired.
       if (data.expirationDateTime && Date.now() - new Date(data.expirationDateTime) > 0) {
         uploadUrl = ''
@@ -680,7 +679,6 @@ class Driver {
         contentType: 'json',
       })
       if (data.error) return app.error({ message: data.error.message })
-      console.log(data)
       uploadUrl = data.uploadUrl
       start = 0
     }
@@ -712,10 +710,10 @@ class Driver {
 
     let { uploadId, uploadUrl, start } = await this.beforeUpload(rest.uploadId, { id, name, size })
 
-    const done = async () => {
+    const done = async (newStream) => {
       let res = await app.request(uploadUrl, {
         method: 'put',
-        data: stream,
+        data: newStream || stream,
         contentType: 'stream',
         signal: rest.signal,
         // responseType: 'text',
@@ -725,7 +723,7 @@ class Driver {
         }
       })
       if (res.status != 201 && res.status != 202) {
-        return this.app.error({ message: 'An error occurred during upload: ' + name })
+        return this.app.error({ message: res.data?.error?.message || ('An error occurred during upload: ' + name) })
       }
 
       return {

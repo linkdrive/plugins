@@ -11,9 +11,8 @@
  const pkgPath = path.resolve(pkgDir, 'package.json')
  
  const remote = 'origin'
- const HOST = 'https://raw.githubusercontent.com/linkdrive/sharelist-plugin/master/packages'
 
- const HOME = 'https://github.com/linkdrive/sharelist-plugin/tree/master/packages'
+ const HOST = 'https://raw.githubusercontent.com/linkdrive/sharelist-plugin/master/packages'
 
  /**
   * @type {{ name: string, version: string }}
@@ -23,7 +22,7 @@
  const currentVersion = pkg.version
  const isDryRun = args.dry
  
- const skipBuild = args.skipBuild
+ const skipBuild = true //args.skipBuild
   
  const commitPath = args['commit-path']
  
@@ -151,7 +150,7 @@
    } else {
      console.log('No changes to commit.')
    }
- 
+
    step('\nPushing to GitHub...')
    await run('git', ['tag', tag])
    await run('git', ['push', remote, `refs/tags/${tag}`])

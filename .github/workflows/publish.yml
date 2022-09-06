@@ -1,4 +1,4 @@
-name: PNP
+name: publish
 
 on:
   push:

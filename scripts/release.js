@@ -62,7 +62,7 @@
     if(newVer[0] == curVer[0] && newVer[1] == curVer[1] && newVer[2] == curVer[2]){
       newVer[3] = curVer[3] ? (curVer[3]+1) : 1
     }
-    return newVer.map(fix).filter(Boolean).join('.')
+    return newVer.filter(Boolean).join('.')
   }
 
   return {

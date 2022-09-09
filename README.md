@@ -17,7 +17,7 @@
 | [CMCC Cloud](packages/cmcc/index.js)         | [![plugin-cmcc version](https://img.shields.io/github/package-json/v/linkdrive/plugins?filename=packages%2Fcmcc%2Fpackage.json&label=%20&logo=%20&style=flat-square&color=blue)](packages/cmcc/CHANGELOG.md)             |
 | [CTC Cloud](packages/ctc/index.js)         | [![plugin-ctc version](https://img.shields.io/github/package-json/v/linkdrive/plugins?filename=packages%2Fctc%2Fpackage.json&label=%20&logo=%20&style=flat-square&color=blue)](packages/ctc/CHANGELOG.md)             |
 | [Baidu NetDisk](packages/baidu/index.js)         | [![plugin-baidu version](https://img.shields.io/github/package-json/v/linkdrive/plugins?filename=packages%2Fbaidu%2Fpackage.json&label=%20&logo=%20&style=flat-square&color=blue)](packages/baidu/CHANGELOG.md)             |
-| [Sharelist Drive](packages/sldrive/index.js)         | [![plugin-baidu version](https://img.shields.io/github/package-json/v/linkdrive/plugins?filename=packages%2Fsldrive%2Fpackage.json&label=%20&logo=%20&style=flat-square&color=blue)](packages/sldrive/CHANGELOG.md)             |
+| [VirtualDrive](packages/sldrive/index.js)         | [![plugin-baidu version](https://img.shields.io/github/package-json/v/linkdrive/plugins?filename=packages%2Fvdrive%2Fpackage.json&label=%20&logo=%20&style=flat-square&color=blue)](packages/sldrive/CHANGELOG.md)             |
 
 ## Filter
 | Package                                           | Version (click for changelogs)                                                                                                       |

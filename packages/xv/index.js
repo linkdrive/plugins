@@ -1,5 +1,5 @@
 //===Sharelist===
-// @name         ⚡️XV
+// @name         ⚡️XV⚡️
 // @namespace    sharelist.plugin.xv
 // @version      0.1.0
 // @license      MIT
@@ -90,7 +90,6 @@ class Driver {
    * files.mtime 修改时间
    */
   async list(id, { search, orderBy, perPage, nextPage } = {}) {
-    console.log(id, nextPage)
     let usePagination = !!perPage
 
     //使用自然分页

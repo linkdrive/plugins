@@ -72,7 +72,6 @@
      })
  
      if (data.error) {
-       console.log(data, formdata)
        throw { message: data.error_description || data.error }
      }
  
@@ -397,7 +396,6 @@
        contentType: 'json',
        proxy
      })
-     console.log(status, data)
  
      if (data.error) return this.app.error({ message: data.error.message })
  

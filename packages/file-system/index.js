@@ -258,7 +258,6 @@ class FileSystem {
     }
     if (data.type == 'file') {
       data.extra.md5 = await md5file(this.ospath(id))
-      console.log(data.extra.md5)
     }
     return data
   }

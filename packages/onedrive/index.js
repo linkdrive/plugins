@@ -59,7 +59,6 @@ class Manager {
       ) {
         await this.refreshAccessToken(config)
       }
-      console.log(config)
       return {
         ...config
       }
@@ -169,7 +168,6 @@ class Manager {
    * @api private
    */
   async refreshAccessToken(credentials) {
-    console.log('[refresh access token]')
     let { client_id, client_secret, redirect_uri, refresh_token, zone, tenant_id, type, ...rest } =
       credentials
     if (type == 'sharelink') {
@@ -188,7 +186,6 @@ class Manager {
       grant_type: 'refresh_token',
     }
     let metadata = this.getAuthority(zone, tenant_id)
-    console.log(this.app)
     let { data } = await this.app.request.post(`${metadata}/oauth2/v2.0/token`, { data: formdata, contentType: 'form' })
 
     if (data.error) {
@@ -410,7 +407,6 @@ class Driver {
     if (error) return { error: error }
 
     if (data.error) return { error: data.error.message }
-    console.log(data)
     let result = {
       id: data.id,
       name: data.name,
@@ -438,12 +434,12 @@ class Driver {
    * @param {string} [parent_id] folder id
    * @param {string} [name] folder name
    * @param {object} [options] options
-   * @param {object} [options.check_name_mode] 
+   * @param {object} [options.conflictBehavior] 
    * @return {object}
    *
    * @api public
    */
-  async mkdir(parent_id, name, { check_name_mode = 'rename' }) {
+  async mkdir(parent_id, name, { conflictBehavior = 'rename' }) {
     let { graph, access_token } = await this.getConfig()
     let url = graph + `${parent_id == DEFAULT_ROOT_ID ? '/root' : `/items/${parent_id}`}` + '/children'
     let { data } = await this.app.request.post(url, {
@@ -646,13 +642,13 @@ class Driver {
     return { id: data.id, name: data.name, parent_id: id }
   }
 
-  async beforeUpload(uploadId, { id, name, size }) {
+  async beforeUpload(uploadId, { id, name, size,conflictBehavior}) {
     let uploadUrl, start = 0
-
+    let { app } = this
     //resume upload
     if (uploadId) {
       uploadUrl = atob(uploadId)
-      let { data } = await this.app.request(uploadUrl)
+      let { data } = await app.request(uploadUrl)
       if (data.error) app.error({ message: data.error.message })
       //upload session has expired.
       if (data.expirationDateTime && Date.now() - new Date(data.expirationDateTime) > 0) {
@@ -665,7 +661,7 @@ class Driver {
     // create new upload session
     if (!uploadUrl) {
       let { graph, access_token } = await this.getConfig()
-      let { data } = await this.app.request(graph + (id == DEFAULT_ROOT_ID ? '/root' : `/items/${id}`) + `:/${encodeURIComponent(name)}:/` + '/createUploadSession', {
+      let { data } = await app.request(graph + (id == DEFAULT_ROOT_ID ? '/root' : `/items/${id}`) + `:/${encodeURIComponent(name)}:/` + '/createUploadSession', {
         method: 'post',
         headers: {
           Authorization: `Bearer ${access_token}`,
@@ -704,11 +700,11 @@ class Driver {
    * @api public
    */
 
-  async upload(id, stream, { size, name, manual, ...rest }) {
+  async upload(id, stream, { size, name, manual, conflictBehavior, ...rest }) {
 
     const app = this.app
 
-    let { uploadId, uploadUrl, start } = await this.beforeUpload(rest.uploadId, { id, name, size })
+    let { uploadId, uploadUrl, start } = await this.beforeUpload(rest.uploadId, { id, name, size, conflictBehavior})
 
     const done = async (newStream) => {
       let res = await app.request(uploadUrl, {

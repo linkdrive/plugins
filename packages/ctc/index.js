@@ -256,7 +256,6 @@ class Manager {
         code = code.replace(/\n/g, '')
         if (code.length == 4) {
           formdata.validateCode = code
-          console.log('get code', code)
         } else {
           continue
         }
@@ -839,7 +838,6 @@ class Driver {
       sliceSize: UPLOAD_PART_SIZE,
       lazyCheck: 1
     })
-    console.log(data)
     if (!data?.code == 'SUCCESS' || !data?.data) return this.app.error({ message: 'a error occurred before upload.' })
 
     let { uploadFileId } = data.data
@@ -918,7 +916,6 @@ class Driver {
         contentType: 'form',
         data: params,
       })
-      console.log(data)
       if (data?.taskStatus == 4) {
         return true
       }

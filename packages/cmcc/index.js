@@ -280,7 +280,6 @@
  
  
        if (!data.success) {
-         console.log(data)
          return this.app.error({ message: data.message })
        }
  
@@ -446,7 +445,6 @@
    }
  
    async rename(id, name, { check_name_mode = 'refuse' } = {}) {
-     console.log('rename', id, name)
      const { request } = this.app
  
      let { cookie, mobile } = await this.getConfig()
@@ -493,7 +491,6 @@
      const { request } = this.app
      const { cookie, mobile } = await this.getConfig()
      let [fid, isFile, parent_id] = getRealId(id)
-     console.log(fid, isFile, parent_id)
      let params = {
        "createBatchOprTaskReq": {
          "taskType": 2,
@@ -537,7 +534,6 @@
     * @api public
     */
    async mv(id, target_id, { name, copy }) {
-     console.log('copy', copy)
      const { request } = this.app
      const { cookie, mobile } = await this.getConfig()
      let [fid, isFile, origin_parent_id] = getRealId(id)
@@ -579,7 +575,6 @@
  
      if (newData) {
        let newId = target_id + '/' + (isFile ? '~' : '') + newData.id
-       console.log(newId)
        if (name) {
          await this.rename(newId, name)
        }
@@ -678,7 +673,6 @@
      //签名校验失败
      if (data.code == '1010010014' && retry > 0) {
        // retry
-       console.log('RETRY', JSON.stringify(data))
        return await resumeUpload(uploadId, retry--)
      }
      if (!data.success) {
@@ -755,9 +749,7 @@
        await this.resumeUpload(rest.uploadId) :
        await this.beforeUpload(parent_id, { name, size, ...rest })
  
-     if (rest.uploadId) {
-       console.log('resume', res)
-     }
+
      //恢复状态发生错误，尝试重新创建
      if (rest.uploadId && res.error) {
        console.log('create new upload session', res.error)
@@ -804,7 +796,6 @@
        })
  
  
-       console.log(data)
        if (status != 200) return this.app.error({ code: status })
  
        return { id: parent_id + '/~' + contentId, name, parent_id }

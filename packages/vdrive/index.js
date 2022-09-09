@@ -1,12 +1,12 @@
 //===Sharelist===
-// @name         ShareListDrive
-// @namespace    sharelist.plugin.sldrive
+// @name         VirtualDrive
+// @namespace    sharelist.plugin.vdrive
 // @version      1.0.14
 // @license      MIT
-// @description  sharelist 内置的网盘系统，使用yaml/json进行描述。
+// @description  sharelist 内置的虚拟网盘，使用yaml/json进行描述。
 // @author       reruin@gmail.com
 // @supportURL   https://github.com/reruin/sharelist
-// @updateURL    https://raw.githubusercontent.com/linkdrive/plugins/master/packages/sldrive/index.js
+// @updateURL    https://raw.githubusercontent.com/linkdrive/plugins/master/packages/vdrive/index.js
 //===/Sharelist==
 const yaml = require('yaml')
 
@@ -54,7 +54,7 @@ class Driver {
   static options = {
     globalSearch: false,
     localSearch: true,
-    protocol: "sld",
+    protocol: "vdrive",
     cache: false,
     pagination: false,
     guide: [

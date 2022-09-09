@@ -1,7 +1,7 @@
 //===Sharelist===
 // @name         AliyunDrive
 // @namespace    sharelist.plugin.aliyundrive
-// @version      0.2.6
+// @version      1.0.0
 // @license      MIT
 // @description  Aliyun Drive
 // @author       reruin@gmail.com
@@ -96,11 +96,9 @@ class Manager {
       },
       contentType: 'json',
     })
-    console.log('refreshAccessToken', data)
     if (data && !data.access_token) {
       throw new Error({ message: data.message || 'An error occurred during refresh access token' })
     }
-    console.log(headers)
     let { user_id, access_token, default_drive_id: drive_id, expires_in, refresh_token, device_id } = data
 
     // expires_in 7200s
@@ -118,7 +116,6 @@ class Manager {
     if (!config.key) {
       config.key = user_id
     }
-    console.log(config)
   }
 }
 
@@ -137,7 +134,6 @@ class Driver {
 
     guide: [
       { key: 'refresh_token', label: 'Refresh Token', type: 'string', required: true },
-      { key: 'proxy', label: 'proxy / 启用中转', type: 'boolean', required: false },
       {
         key: 'root_id',
         label: '初始文件夹ID / Root ID',
@@ -380,7 +376,6 @@ class Driver {
       })
 
       const ret = { url: data?.cdn_url || data?.url, size: data.size, max_age: new Date(data.expiration).getTime() - Date.now() }
-      console.log(ret)
       if (ret.url?.includes('x-oss-additional-headers=referer')) {
         ret.proxy = {
           headers: {
@@ -661,7 +656,6 @@ class Driver {
         contentType: 'json',
       })
 
-      console.log('RESUME', data)
       if (data) {
         data.start = (partNumber - 1) * UPLOAD_PART_SIZE
         return data
@@ -670,6 +664,10 @@ class Driver {
 
     const partList = new Array(Math.ceil(size / UPLOAD_PART_SIZE)).fill(0).map((i, idx) => ({ part_number: idx + 1 }))
 
+    const checkNameMap = {
+      1:'auto_rename',
+      2:'overwrite'
+    }
     let params = {
       parent_file_id: id,
       drive_id,
@@ -690,7 +688,6 @@ class Driver {
       data: params,
       contentType: 'json',
     })
-    console.log(data)
     if (data.code) {
       return this.app.error(data)
     }

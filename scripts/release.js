@@ -233,10 +233,8 @@
 
   const md5 = content => crypto.createHash('md5').update(content).digest("hex")
 
-  function createReadMe(){
 
-  }
- function updateList(){
+  function updateList(){
     let filepath = path.join( __dirname ,'../packages')
     let pluginsData = fs.readdirSync(filepath).map((name) => {
       let pluginpath = path.join( filepath , '../packages',name,'index.js')
@@ -279,11 +277,19 @@
       if( changedFlag ){
         fs.writeFileSync(pluginpath, content)
       }
+
+      meta.script = content
       return meta
     })
 
-    createReadMe(pluginsData)
+    fs.writeFileSync(path.join( __dirname ,'../list_full.json'),JSON.stringify(pluginsData))
+
+    pluginsData.forEach(i => {
+      delete i.script
+    })
+
     fs.writeFileSync(path.join( __dirname ,'../list.json'),JSON.stringify(pluginsData))
+
  }
 
  main().catch((err) => {

@@ -90,7 +90,7 @@ class Manager {
     let expires_at = data.expires_in * 1000 + Date.now()
 
     credentials.access_token = data.access_token
-    // credentials.refresh_token = data.refresh_token
+    credentials.refresh_token = data.refresh_token
     credentials.expires_at = expires_at
   }
 

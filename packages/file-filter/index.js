@@ -71,7 +71,6 @@ module.exports = (sharelist) => {
         } else {
           await safeCall(async () => {
             content = yaml.parse(await driver.getContent(hit.id))
-            console.log(content)
           })
         }
 

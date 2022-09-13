@@ -1,7 +1,7 @@
 //===Sharelist===
 // @name         VirtualDrive
 // @namespace    sharelist.plugin.vdrive
-// @version      1.0.14
+// @version      1.0.0
 // @license      MIT
 // @description  sharelist 内置的虚拟网盘，使用yaml/json进行描述。
 // @author       reruin@gmail.com

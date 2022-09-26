@@ -1,4 +1,4 @@
-# sharelist plugins ⚡
+# sharelist plugins
 
 <p>
   <a href="https://discord.gg/VHHzyCCUuH"><img src="https://img.shields.io/badge/chat-discord-blue?style=flat&logo=discord" alt="discord chat"></a>

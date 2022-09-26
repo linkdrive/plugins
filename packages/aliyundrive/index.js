@@ -45,7 +45,10 @@ class Manager {
 
     // this.instance.add(config)
     const getter = this.instance.createGetter(config)
+
+    // lazy load config
     // getter()
+
     return getter
   }
 
@@ -54,17 +57,23 @@ class Manager {
   }
 
   createGetter(config) {
+    let DRIVE_KEY = this.app.DRIVE_KEY
+
+    if (!config[DRIVE_KEY] && config.user_id) {
+      config[DRIVE_KEY] = config.user_id
+    }
+
     return async () => {
       if (
         !config.user_id ||
         !(config.access_token && config.expires_at && config.expires_at - Date.now() > 5 * 60 * 1000)
       ) {
         await this.refreshAccessToken(config)
-
-        // if (config.user_id) {
-        //   this.clientMap.set(config.user_id, config)
-        // }
       }
+      if (!config[DRIVE_KEY]) {
+        config[DRIVE_KEY] = config.user_id
+      }
+
       return {
         ...config
       }
@@ -559,7 +568,7 @@ class Driver {
    *
    * @api public
    */
-  async upload(id, stream, { size, name, manual, uploadId, ...rest }) {
+  async upload(id, stream, { size, name, uploadId, conflictBehavior, ...rest }) {
     const { app } = this
 
     let res = await this.beforeUpload(uploadId, { id, name, size, ...rest })
@@ -577,12 +586,13 @@ class Driver {
       }
     }
 
-    const done = async (customStream, updateUploadState) => {
+    const done = async (stream) => {
+      let readStream = (typeof stream == 'function') ? await stream(start, uploadId) : stream
       let uploadParts = res.part_info_list
-      let passStream = app.streamReader(customStream, { highWaterMark: 2 * UPLOAD_PART_SIZE })
+      let passStream = app.streamReader(readStream, { highWaterMark: 2 * UPLOAD_PART_SIZE })
       for (let part of uploadParts) {
         let uploadUrl = part.upload_url
-        updateUploadState?.(upload_id + '-' + file_id + '-' + part.part_number)
+        rest.updateUploadState?.(upload_id + '-' + file_id + '-' + part.part_number)
 
         let chunk = await passStream.read(UPLOAD_PART_SIZE)
         let headers = {
@@ -591,6 +601,7 @@ class Driver {
           'User-Agent': DEFAULT_UA,
           'Content-Type': ''
         }
+
         headers['Content-Length'] = chunk.length
 
         let res = await app.request(uploadUrl, {
@@ -604,21 +615,19 @@ class Driver {
           let message = res.data.match(/<Code>([\w\W]+?)<\/Code>/)?.[1] || 'unknown'
           return this.app.error({ message: 'An error occurred during upload: ' + message })
         }
-
       }
 
       await this.afterUpload(file_id, upload_id)
 
-      return { id: file_id, name: file_name }
+      return { id: file_id, name: file_name, parent_id: id }
     }
 
-    if (manual) {
-      return {
-        uploadId, start, done
-      }
+    if (!stream) {
+      return { uploadId, start }
     } else {
       return await done(stream)
     }
+
   }
 
   async haveSameFile(parent_id, name, size) {
@@ -631,7 +640,7 @@ class Driver {
     return false
   }
 
-  async beforeUpload(uploadId, { id, name, size, check_name_mode, sha1, ...rest } = { check_name_mode: 'auto_rename' }) {
+  async beforeUpload(uploadId, { id, name, size, conflictBehavior, sha1, ...rest } = { conflictBehavior: 'rename' }) {
     let { drive_id, access_token } = await this.getConfig()
     //resume upload progress
     let partCount = Math.ceil(size / UPLOAD_PART_SIZE)
@@ -665,8 +674,8 @@ class Driver {
     const partList = new Array(Math.ceil(size / UPLOAD_PART_SIZE)).fill(0).map((i, idx) => ({ part_number: idx + 1 }))
 
     const checkNameMap = {
-      1:'auto_rename',
-      2:'overwrite'
+      1: 'auto_rename',
+      2: 'overwrite'
     }
     let params = {
       parent_file_id: id,
@@ -674,12 +683,12 @@ class Driver {
       name,
       size,
       type: "file",
-      check_name_mode,
+      check_name_mode: checkNameMap[conflictBehavior],
       part_info_list: partList,
     }
 
     if (sha1) {
-      params.pre_hash = sha1
+      params.pre_hash = sha1.toUpperCase()
     }
     let { data } = await this.app.request.post(`${API_ENDPOINT}/adrive/v2/file/createWithFolders`, {
       headers: {

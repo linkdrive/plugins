@@ -7,7 +7,7 @@
 // @author       reruin@gmail.com
 // @supportURL   https://github.com/reruin/sharelist
 // @updateURL    https://raw.githubusercontent.com/linkdrive/plugins/master/packages/onedrive/index.js
-// @icon         https://p.sfx.ms/images/favicon.ico
+// @icon         data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgNS41IDMyIDIwLjUiPjx0aXRsZT5PZmZpY2VDb3JlMTBfMzJ4XzI0eF8yMHhfMTZ4XzAxLTIyLTIwMTk8L3RpdGxlPjxnIGlkPSJTVFlMRV9DT0xPUiI+PHBhdGggZD0iTTEyLjIwMjQ1LDExLjE5MjkybC4wMDAzMS0uMDAxMSw2LjcxNzY1LDQuMDIzNzksNC4wMDI5My0xLjY4NDUxLjAwMDE4LjAwMDY4QTYuNDc2OCw2LjQ3NjgsMCwwLDEsMjUuNSwxM2MuMTQ3NjQsMCwuMjkzNTguMDA2Ny40Mzg3OC4wMTYzOWExMC4wMDA3NSwxMC4wMDA3NSwwLDAsMC0xOC4wNDEtMy4wMTM4MUM3LjkzMiwxMC4wMDIxNSw3Ljk2NTcsMTAsOCwxMEE3Ljk2MDczLDcuOTYwNzMsMCwwLDEsMTIuMjAyNDUsMTEuMTkyOTJaIiBmaWxsPSIjMDM2NGI4Ii8+PHBhdGggZD0iTTEyLjIwMjc2LDExLjE5MTgybC0uMDAwMzEuMDAxMUE3Ljk2MDczLDcuOTYwNzMsMCwwLDAsOCwxMGMtLjAzNDMsMC0uMDY4MDUuMDAyMTUtLjEwMjIzLjAwMjU4QTcuOTk2NzYsNy45OTY3NiwwLDAsMCwxLjQzNzMyLDIyLjU3Mjc3bDUuOTI0LTIuNDkyOTIsMi42MzM0Mi0xLjEwODE5LDUuODYzNTMtMi40Njc0NiwzLjA2MjEzLTEuMjg4NTlaIiBmaWxsPSIjMDA3OGQ0Ii8+PHBhdGggZD0iTTI1LjkzODc4LDEzLjAxNjM5QzI1Ljc5MzU4LDEzLjAwNjcsMjUuNjQ3NjQsMTMsMjUuNSwxM2E2LjQ3NjgsNi40NzY4LDAsMCwwLTIuNTc2NDguNTMxNzhsLS4wMDAxOC0uMDAwNjgtNC4wMDI5MywxLjY4NDUxLDEuMTYwNzcuNjk1MjhMMjMuODg2MTEsMTguMTlsMS42NjAwOS45OTQzOCw1LjY3NjMzLDMuNDAwMDdhNi41MDAyLDYuNTAwMiwwLDAsMC01LjI4Mzc1LTkuNTY4MDVaIiBmaWxsPSIjMTQ5MGRmIi8+PHBhdGggZD0iTTI1LjU0NjIsMTkuMTg0MzcsMjMuODg2MTEsMTguMTlsLTMuODA0OTMtMi4yNzkxLTEuMTYwNzctLjY5NTI4TDE1Ljg1ODI4LDE2LjUwNDIsOS45OTQ3NSwxOC45NzE2Niw3LjM2MTMzLDIwLjA3OTg1bC01LjkyNCwyLjQ5MjkyQTcuOTg4ODksNy45ODg4OSwwLDAsMCw4LDI2SDI1LjVhNi40OTgzNyw2LjQ5ODM3LDAsMCwwLDUuNzIyNTMtMy40MTU1NloiIGZpbGw9IiMyOGE4ZWEiLz48L2c+PC9zdmc+
 //===/Sharelist==
 
 const { URL } = require('url')
@@ -30,6 +30,8 @@ const supportZones = {
 }
 
 const qs = (d) => new URLSearchParams(d).toString()
+
+const sleep = time => new Promise((resolve, reject) => setTimeout(resolve, time))
 
 class Manager {
   static getInstance(app, config) {
@@ -642,7 +644,7 @@ class Driver {
     return { id: data.id, name: data.name, parent_id: id }
   }
 
-  async beforeUpload(uploadId, { id, name, size,conflictBehavior}) {
+  async beforeUpload(uploadId, { id, name, size, conflictBehavior }) {
     let uploadUrl, start = 0
     let { app } = this
     //resume upload
@@ -688,6 +690,7 @@ class Driver {
 
   /**
    * upload file
+   * doc: https://docs.microsoft.com/zh-cn/onedrive/developer/rest-api/api/driveitem_createuploadsession?view=odsp-graph-online
    *
    * @param {string} [id] folder id
    * @param {object} [options] upload file meta
@@ -696,46 +699,60 @@ class Driver {
    * @param {ReadableStream} [options.stream] upload file stream
    * @param {object} [credentials] credentials
    * @return {string | error}
-   *
+   * 
    * @api public
    */
-
   async upload(id, stream, { size, name, manual, conflictBehavior, ...rest }) {
 
     const app = this.app
 
-    let { uploadId, uploadUrl, start } = await this.beforeUpload(rest.uploadId, { id, name, size, conflictBehavior})
+    let { uploadId, uploadUrl, start } = await this.beforeUpload(rest.uploadId, { id, name, size, conflictBehavior })
 
-    const done = async (newStream) => {
-      let res = await app.request(uploadUrl, {
-        method: 'put',
-        data: newStream || stream,
-        contentType: 'stream',
-        signal: rest.signal,
-        // responseType: 'text',
-        headers: {
-          'Content-Range': `bytes ${start}-${size - 1}/${size}`,
-          'Content-Length': size - start,
+    const done = async (stream) => {
+      let retryTimes = 3
+
+      while (retryTimes-- > 0) {
+
+        let readStream = (typeof stream == 'function') ? await stream(start, uploadId) : stream
+
+        if (readStream === undefined) return
+        let res = await app.request(uploadUrl, {
+          method: 'put',
+          data: readStream,
+          contentType: 'stream',
+          signal: rest.signal,
+          // responseType: 'text',
+          headers: {
+            'Content-Range': `bytes ${start}-${size - 1}/${size}`,
+            'Content-Length': size - start,
+          }
+        })
+        console.log(res.status, '--->')
+        if (res.status != 201 && res.status != 202) {
+          // 500 502 503 504 retry
+          if (+res.status >= 500) {
+            await sleep(app.utils.retryTime(3 - retryTimes))
+            continue
+          } else {
+            return this.app.error({ message: res.data?.error?.message || ('An error occurred during upload: ' + name) })
+          }
         }
-      })
-      if (res.status != 201 && res.status != 202) {
-        return this.app.error({ message: res.data?.error?.message || ('An error occurred during upload: ' + name) })
-      }
 
-      return {
-        id: res.data.id,
-        name: res.data.name,
-        parent_id: id
+        return {
+          id: res.data.id,
+          name: res.data.name,
+          parent_id: id
+        }
+
       }
     }
 
-    if (manual) {
-      return {
-        uploadId, start, done
-      }
+    if (!stream) {
+      return { uploadId, start, done }
     } else {
       return await done(stream)
     }
+
   }
 
 

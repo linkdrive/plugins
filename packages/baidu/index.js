@@ -18,8 +18,14 @@ const ERR_CODE = {
   0: '请求成功',
   2: '参数错误',
   '-6': '身份验证失败, access_token 是否有效? 部分接口需要申请对应的网盘权限',
-  '-7': '文件或目录无权访问',
+  '-7': '文件或目录名错误或无权访问',
+  '-8': '件或目录已存在',
   '-9': '文件或目录不存在',
+  '-10': '云端容量已满',
+  '10': '创建文件的superfile失败',
+  '31024': '没有申请上传权限',
+  '31299': '第一个分片的大小小于4MB',
+  '31364': '超出分片大小限制',
   31034: '命中接口频控',
   42000: '访问过于频繁',
   42211: '图片详细信息查询失败',
@@ -44,9 +50,16 @@ class Manager {
 
   constructor(app) {
     this.app = app
+    this.keyMaps = {}
   }
 
   createGetter(config) {
+    //May be public client_id
+    let [basePart] = config.client_id.split('.')
+    if (this.keyMaps[config.client_id]) {
+      config.client_id = basePart + '.' + ('' + Math.random()).substring(2)
+    }
+    this.keyMaps[basePart] = 1
     return async () => {
       if (
         !(config.access_token && config.expires_at && config.expires_at - Date.now() > 5 * 60 * 1000)
@@ -54,7 +67,8 @@ class Manager {
         await this.refreshAccessToken(config)
       }
       return {
-        ...config
+        ...config,
+        client_id: basePart
       }
     }
   }
@@ -75,7 +89,7 @@ class Manager {
     }
 
     let formdata = {
-      client_id: client_id.split('::')[0],
+      client_id: client_id.split('.')[0],
       client_secret,
       // redirect_uri,
       refresh_token,
@@ -92,6 +106,14 @@ class Manager {
     credentials.access_token = data.access_token
     credentials.refresh_token = data.refresh_token
     credentials.expires_at = expires_at
+
+    // update meta
+    let { data: res } = await this.app.request.get(`https://pan.baidu.com/rest/2.0/xpan/nas?method=uinfo?access_token=${credentials.refresh_token}`)
+
+    if (!res.errno) {
+      credentials.vipType = data.vip_type
+    }
+
   }
 
 }
@@ -114,6 +136,10 @@ class Driver {
 
     key: 'client_id',
     defaultRoot: DEFAULT_ROOT_ID,
+
+    hash: 'md5',
+    uploadHash: 'md5-256-chunk',
+
     guide: [
       { key: 'client_id', label: '应用ID / AppKey', type: 'string', required: true },
       { key: 'client_secret', label: '应用机密 / SecretKey', type: 'string', required: true },
@@ -443,6 +469,137 @@ class Driver {
     let newId = target_id + '/' + id.split('/').pop()
 
     return { id: newId, parent_id }
+  }
+
+  async beforeUpload(uploadId, { id, name, size, conflictBehavior, md5, filepath }) {
+    let { access_token } = await this.getConfig()
+    let { app } = this
+
+    let [contentMD5, sliceMD5] = md5.split('-')
+    /*
+    0 为不重命名，返回冲突
+    1 为只要path冲突即重命名
+    2 为path冲突且block_list不同才重命名
+    3 为覆盖 
+    */
+    const checkNameMap = {
+      0: 0,
+      1: 1,
+      2: 3
+    }
+    //resume upload
+    let { data } = await app.request.post(`${API}/file?method=precreate&access_token=${access_token}`, {
+      data: {
+        path: filepath,
+        size,
+        isdir: 0,
+        autoinit: 1,
+        rtype: checkNameMap[conflictBehavior] || 1,
+        uploadid: uploadId,
+
+        //文件各分片MD5数组的json串
+        block_list,
+
+        'content-md5': contentMD5,
+        'slice-md5': sliceMD5
+      },
+      contentType: 'form',
+    })
+
+    if (data.errno) return this.app.error({ message: ERR_CODE[data.errno] })
+
+    console.log('before', data)
+    return data
+
+    // https://pan.baidu.com/rest/2.0/xpan/file?method=precreate
+  }
+
+  async afterUpload(uploadId, path, md5) {
+    let { access_token } = await this.getConfig()
+
+    let { data } = await this.app.request.post(`${API}/file?method=create&access_token=${access_token}`, {
+      data: {
+        path,
+        size: 0,
+        rtype: 1,
+        isdir: 0,
+        uploadid: uploadId,
+        block_list: md5
+      },
+      contentType: 'form',
+    })
+  }
+
+  async upload(id, stream, { size, name, manual, conflictBehavior, md5, ...rest }) {
+
+    const app = this.app
+
+    let [fid, isFile, parent_id] = getRealId(id)
+
+    let filedata = await this.meta(fid)
+
+    let filepath = fullpath(filedata.extra.path, name)
+
+    let { access_token, vipType } = await this.getConfig()
+
+    let UPLOAD_PART_SIZE = (vipType == 0 ? 4 : vipType == 1 ? 16 : vipType == 2 ? 32 : 4) * 1024 * 1024
+
+    let { uploadId, block_list: partsList, path, info, return_type } = await this.beforeUpload(rest.uploadId, { id, name, size, md5, conflictBehavior, filepath })
+
+    // file exists
+    if (return_type == 2) {
+      return {
+        id: (parent_id ? `${parent_id}/` : '') + info.fs_id,
+        name: name,
+        parent_id
+      }
+    }
+
+    const uploadUrl = 'https://d.pcs.baidu.com/rest/2.0/pcs/superfile2?method=upload'
+
+    let retryTimes = 3
+
+    let readStream = (typeof stream == 'function') ? await stream(start, uploadId) : stream
+
+    let passStream = app.streamReader(readStream, { highWaterMark: 2 * UPLOAD_PART_SIZE })
+
+    let partsMD5 = []
+
+    // let startPart = partsList[0]
+
+    for (let part of partsList) {
+      rest.updateUploadState?.(uploadId)
+
+      let partUploadUrl = uploadUrl + `&access_token=${access_token}&type=tmpfile&path=${fileppathath}&uploadid=${uploadId}&partseq=${part}`
+
+      let chunk = await passStream.read(UPLOAD_PART_SIZE)
+
+      let res
+      while (retryTimes-- > 0) {
+        res = await app.request(partUploadUrl, {
+          method: 'post',
+          data: chunk,
+          contentType: 'buffer',
+          signal: rest.signal,
+        })
+        if (res.errno) {
+          await sleep(app.utils.retryTime(3 - retryTimes))
+          continue
+        }
+      }
+
+      if (res.errno) return this.app.error({ message: ERR_CODE[res.errno] })
+      partsMD5.push(res.md5)
+    }
+
+    let res = await this.afterUpload(uploadId, path, partsMD5)
+    console.log('after', res)
+    return {
+      id: (parent_id ? `${parent_id}/` : '') + res.fs_id,
+      name: data.server_filename,
+      parent_id
+    }
+
   }
 }
 

@@ -674,6 +674,7 @@ class Driver {
     const partList = new Array(Math.ceil(size / UPLOAD_PART_SIZE)).fill(0).map((i, idx) => ({ part_number: idx + 1 }))
 
     const checkNameMap = {
+      0: 'fail',
       1: 'auto_rename',
       2: 'overwrite'
     }

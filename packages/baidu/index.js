@@ -12,7 +12,13 @@
 
 // doc: https://pan.baidu.com/union/document/basic#%E8%8E%B7%E5%8F%96%E6%96%87%E4%BB%B6%E5%88%97%E8%A1%A8
 
+const crypto = require('crypto')
+
+const md5 = (v) => crypto.createHash('md5').update(v).digest('hex')
+
 const API = 'https://pan.baidu.com/rest/2.0/xpan'
+
+const UPLOAD_API = 'https://d.pcs.baidu.com/rest/2.0/pcs/superfile2?method=upload'
 
 const ERR_CODE = {
   0: '请求成功',
@@ -34,8 +40,45 @@ const ERR_CODE = {
   42214: '文件基础信息查询失败',
 }
 
+/*
+  0 为不重命名，返回冲突
+  1 为只要path冲突即重命名
+  2 为path冲突且block_list不同才重命名
+  3 为覆盖 
+*/
+const RTYPE = {
+  0: 0,
+  1: 1,
+  2: 3
+}
+
+
 const DEFAULT_ROOT_ID = 'root'
 
+const fakeMD5 = () => md5(`${Date.now()}.${Math.random()}`)
+const encodePath = v => Buffer.from(encodeURIComponent(v)).toString('base64')
+
+const decodePath = v => decodeURIComponent(Buffer.from(v, 'base64').toString('utf-8'))
+
+const prestream = (readStream, size) => new Promise((resolve, reject) => {
+  let buffer = [], count = 0
+
+  const onEnd = () => {
+    let head = Buffer.concat(buffer, count)
+    let hash = md5(head.subarray(0, size))
+    readStream.destroy()
+    resolve(hash)
+  }
+
+  readStream.on('data', (chunk) => {
+    buffer.push(chunk)
+    count += chunk.length
+    if (count >= size) {
+      readStream.pause()
+      onEnd()
+    }
+  })
+})
 /**
  * auth manager class
  */
@@ -81,7 +124,6 @@ class Manager {
    * @api private
    */
   async refreshAccessToken(credentials) {
-    console.log('refreshAccessToken')
     let { client_id, client_secret, redirect_uri, refresh_token, ...rest } = credentials
 
     if (!(client_id && client_secret && refresh_token)) {
@@ -108,7 +150,7 @@ class Manager {
     credentials.expires_at = expires_at
 
     // update meta
-    let { data: res } = await this.app.request.get(`https://pan.baidu.com/rest/2.0/xpan/nas?method=uinfo?access_token=${credentials.refresh_token}`)
+    let { data: res } = await this.app.request.get(`${API}/nas?method=uinfo?access_token=${credentials.refresh_token}`)
 
     if (!res.errno) {
       credentials.vipType = data.vip_type
@@ -138,7 +180,7 @@ class Driver {
     defaultRoot: DEFAULT_ROOT_ID,
 
     hash: 'md5',
-    uploadHash: 'md5-256-chunk',
+    uploadHash: 'md5_256k',
 
     guide: [
       { key: 'client_id', label: '应用ID / AppKey', type: 'string', required: true },
@@ -155,7 +197,16 @@ class Driver {
     this.app = app
     this.getConfig = Manager.getInstance(app, config)
   }
-
+  /*
+  async getOptions() {
+    let { vipType } = await this.getConfig()
+    // 会员类型，0普通用户、1普通会员、2超级会员
+    let chunkSize = (['4', '16', '32'])[vipType || 0]
+    return {
+      'uploadHash': `md5_256k_${chunkSize}m`
+    }
+  }
+*/
   /**
    * Lists or search files
    *
@@ -201,7 +252,6 @@ class Driver {
         contentType: 'json',
       })
       if (data.errno) return this.app.error({ message: ERR_CODE[data.errno] })
-
       data.list.forEach((i) => {
         let item = {
           id: id + '/' + (i.isdir ? '' : '~') + i.fs_id,
@@ -471,67 +521,76 @@ class Driver {
     return { id: newId, parent_id }
   }
 
-  async beforeUpload(uploadId, { id, name, size, conflictBehavior, md5, filepath }) {
+  async beforeUpload(taskId, { id, name, size, rtype, hash, filepath, UPLOAD_PART_SIZE }) {
     let { access_token } = await this.getConfig()
     let { app } = this
 
-    let [contentMD5, sliceMD5] = md5.split('-')
-    /*
-    0 为不重命名，返回冲突
-    1 为只要path冲突即重命名
-    2 为path冲突且block_list不同才重命名
-    3 为覆盖 
-    */
-    const checkNameMap = {
-      0: 0,
-      1: 1,
-      2: 3
+    // baidu pan 没有进度查询接口,直接计算未上传部分
+    if (taskId) {
+      let [uploadId, path, partStart, partSize] = taskId.split('|')
+      partSize = parseInt(partSize)
+      let len = Math.ceil(size / partSize)
+      let partsList = new Array(len - partStart).fill(0).map((i, idx) => idx + parseInt(partStart))
+      console.log(uploadId, partsList, partSize)
+      return { uploadId, partsList, path: decodePath(path), partSize }
     }
-    //resume upload
+
+    let { md5, head, parts } = hash
+
+    //实测不会 合并分片时 不会校验切片MD5
+    if (!parts?.length) {
+      parts = new Array(Math.ceil(size / UPLOAD_PART_SIZE)).fill(md5 || fakeMD5())
+    }
+
+    const params = {
+      path: filepath,
+      size,
+      isdir: 0,
+      autoinit: 1,
+      rtype,
+
+      block_list: parts,
+    }
+    if (head) {
+      params['slice-md5'] = head
+    }
+    if (md5) {
+      params['content-md5'] = md5
+    }
+    console.log('params', params)
     let { data } = await app.request.post(`${API}/file?method=precreate&access_token=${access_token}`, {
+      data: params,
+      contentType: 'form',
+    })
+    if (data.errno) return this.app.error({ message: ERR_CODE[data.errno] })
+
+    if (!data.path) data.path = filepath
+
+    return { ...data, uploadId: data.uploadid, partsList: data.block_list }
+
+  }
+
+  async afterUpload({ uploadId, path, rtype, size, hash, partsMD5 }) {
+    let { access_token } = await this.getConfig()
+
+    let { data } = await this.app.request.post(`${API}/file?method=create&access_token=${access_token}`, {
       data: {
-        path: filepath,
+        path,
         size,
+        rtype,
         isdir: 0,
-        autoinit: 1,
-        rtype: checkNameMap[conflictBehavior] || 1,
         uploadid: uploadId,
-
-        //文件各分片MD5数组的json串
-        block_list,
-
-        'content-md5': contentMD5,
-        'slice-md5': sliceMD5
+        block_list: partsMD5
       },
       contentType: 'form',
     })
 
     if (data.errno) return this.app.error({ message: ERR_CODE[data.errno] })
 
-    console.log('before', data)
     return data
-
-    // https://pan.baidu.com/rest/2.0/xpan/file?method=precreate
   }
 
-  async afterUpload(uploadId, path, md5) {
-    let { access_token } = await this.getConfig()
-
-    let { data } = await this.app.request.post(`${API}/file?method=create&access_token=${access_token}`, {
-      data: {
-        path,
-        size: 0,
-        rtype: 1,
-        isdir: 0,
-        uploadid: uploadId,
-        block_list: md5
-      },
-      contentType: 'form',
-    })
-  }
-
-  async upload(id, stream, { size, name, manual, conflictBehavior, md5, ...rest }) {
-
+  async upload(id, stream, { size, name, manual, conflictBehavior, hash, hash_type, state, ...rest }) {
     const app = this.app
 
     let [fid, isFile, parent_id] = getRealId(id)
@@ -544,63 +603,88 @@ class Driver {
 
     let UPLOAD_PART_SIZE = (vipType == 0 ? 4 : vipType == 1 ? 16 : vipType == 2 ? 32 : 4) * 1024 * 1024
 
-    let { uploadId, block_list: partsList, path, info, return_type } = await this.beforeUpload(rest.uploadId, { id, name, size, md5, conflictBehavior, filepath })
+    let rtype = RTYPE[conflictBehavior] || 1
+
+    // 仅当存在md5 时，获取 slice-content hash 用于快速校验
+    if (!hash.head && hash.md5) {
+      hash.head = await prestream((typeof stream == 'function') ? await stream(0) : stream, 256 * 1024)
+    }
+
+    let { uploadId, partsList, path, info, return_type, partSize } = await this.beforeUpload(state?.uploadId, { id, name, size, hash, hash_type, rtype, filepath, UPLOAD_PART_SIZE })
+    //上传期间用户会员等级发生变化，当从高级降到普通时，分片大小将无法兼容
+    if (partSize) {
+      if (partSize <= UPLOAD_PART_SIZE) {
+        UPLOAD_PART_SIZE = partSize
+      } else {
+        return this.app.error({ message: ERR_CODE['31364'] })
+      }
+    }
+
+    let pathId = encodePath(path)
 
     // file exists
     if (return_type == 2) {
       return {
         id: (parent_id ? `${parent_id}/` : '') + info.fs_id,
         name: name,
-        parent_id
+        parent_id,
+        completed: true,
       }
     }
 
-    const uploadUrl = 'https://d.pcs.baidu.com/rest/2.0/pcs/superfile2?method=upload'
+    let start = partsList[0] * UPLOAD_PART_SIZE
 
-    let retryTimes = 3
+    if (!stream) {
+      return { uploadId: [uploadId, pathId, partsList[0], UPLOAD_PART_SIZE].join('|'), start }
+    }
 
-    let readStream = (typeof stream == 'function') ? await stream(start, uploadId) : stream
+    let readStream = (typeof stream == 'function') ? await stream(start) : stream
 
     let passStream = app.streamReader(readStream, { highWaterMark: 2 * UPLOAD_PART_SIZE })
 
-    let partsMD5 = []
-
-    // let startPart = partsList[0]
+    let partsMD5 = (state?.partsMD5 || [])
 
     for (let part of partsList) {
-      rest.updateUploadState?.(uploadId)
+      rest.setState?.({ uploadId: [uploadId, pathId, part, UPLOAD_PART_SIZE].join('|'), partsMD5 })
 
-      let partUploadUrl = uploadUrl + `&access_token=${access_token}&type=tmpfile&path=${fileppathath}&uploadid=${uploadId}&partseq=${part}`
+      let partUploadUrl = UPLOAD_API + `&access_token=${access_token}&type=tmpfile&path=${encodeURIComponent(path)}&uploadid=${uploadId}&partseq=${part}`
 
       let chunk = await passStream.read(UPLOAD_PART_SIZE)
 
       let res
+
+      let retryTimes = 3
+
       while (retryTimes-- > 0) {
         res = await app.request(partUploadUrl, {
-          method: 'post',
+          // TODO 文档要求使用POST，会触发 { error_code: 31208, error_msg: 'content_type error' } 
+          // 实测应为 PUT !
+          method: 'put',
           data: chunk,
           contentType: 'buffer',
           signal: rest.signal,
         })
-        if (res.errno) {
+        if (res.data.errno) {
           await sleep(app.utils.retryTime(3 - retryTimes))
           continue
+        } else {
+          partsMD5.push(res.data.md5)
+          break
         }
       }
-
-      if (res.errno) return this.app.error({ message: ERR_CODE[res.errno] })
-      partsMD5.push(res.md5)
+      // console.log(res.data)
+      if (res.data.errno) return this.app.error({ message: ERR_CODE[res.data.errno] })
     }
 
-    let res = await this.afterUpload(uploadId, path, partsMD5)
-    console.log('after', res)
+    let res = await this.afterUpload({ uploadId, path, rtype, size, partsMD5, uploadId, hash })
+
     return {
       id: (parent_id ? `${parent_id}/` : '') + res.fs_id,
-      name: data.server_filename,
+      name: res.server_filename || name,
       parent_id
     }
-
   }
+
 }
 
 module.exports = { driver: Driver }

@@ -436,8 +436,32 @@ class Driver {
     }
   }
 
-  async beforeUpload(parent_id, { name }) {
+  async beforeUpload(parent_id, { name, size, state }) {
     let { access_token, proxy } = await this.getConfig()
+    //Resume an interrupted upload
+    if (state.uploadId) {
+      let { headers, status, data } = await this.app.request.put(state.uploadId, {
+        data: {
+          name,
+          parents: [parent_id]
+        },
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          'Content-Range': '*/' + size
+        },
+        contentType: 'json',
+        responseType: 'text',
+        proxy
+      })
+      if (status == 200 || status == 201) {
+        return { completed: true }
+      }
+      //308 Resume Incomplete
+      else if (status == 308) {
+        return { uploadUrl: state.uploadId, start: +headers['range'].split('-')[1] }
+      }
+    }
+
 
     let { headers, status, data } = await this.app.request.post(`${API_ENDPOINT}/upload/drive/v3/files?uploadType=resumable`, {
       data: {
@@ -446,16 +470,21 @@ class Driver {
       },
       headers: {
         Authorization: `Bearer ${access_token}`,
+        'X-Upload-Content-Length': size
       },
       contentType: 'json',
       responseType: 'text',
       proxy
     })
-    return headers?.location
+
+    if (status != 200) return this.app.error({ code: status, message: 'An error occurred during resumable upload' })
+
+    return { uploadUrl: headers?.location, start: 0 }
   }
 
   /**
    * upload file
+   * Maximum file size: 5120GB
    *
    * @param {string} [id] folder id
    * @param {ReadableStream} [stream] upload file stream
@@ -471,17 +500,19 @@ class Driver {
     const { app } = this
     let { proxy } = await this.getConfig()
 
-    let uploadUrl = await this.beforeUpload(id, { name, size, ...rest })
+    let { uploadUrl, start } = await this.beforeUpload(id, { name, size, ...rest })
 
     if (!uploadUrl) {
       return app.error('An error occurred during upload, miss upload url')
     }
 
+    rest?.setState?.({ uploadId: `${uploadUrl}`, start })
+
     let { data } = await app.request(uploadUrl, {
       method: 'put',
       headers: {
-        'Content-Length': size,
-        'Content-Range': `bytes ${0}-${size - 1}/${size}`,
+        'Content-Length': size - start,
+        'Content-Range': `bytes ${start}-${size - 1}/${size}`,
       },
       data: stream,
       contentType: 'stream',

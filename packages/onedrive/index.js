@@ -427,6 +427,15 @@ class Driver {
       },
     }
 
+    if (data.file) {
+      if (data.file.hashes?.sha1Hash) {
+        result.extra.sha1 = data.file.hashes?.sha1Hash.toLowerCase()
+      }
+      result.extra.mime = data.file.mimeType
+    } else if (data.folder) {
+      result.extra.child_count = i.folder.childCount
+    }
+
     return result
   }
 
@@ -708,49 +717,45 @@ class Driver {
 
     let { uploadId, uploadUrl, start } = await this.beforeUpload(rest.uploadId, { id, name, size, conflictBehavior })
 
-    const done = async (stream) => {
-      let retryTimes = 3
-
-      while (retryTimes-- > 0) {
-
-        let readStream = (typeof stream == 'function') ? await stream(start, uploadId) : stream
-
-        if (readStream === undefined) return
-        let res = await app.request(uploadUrl, {
-          method: 'put',
-          data: readStream,
-          contentType: 'stream',
-          signal: rest.signal,
-          // responseType: 'text',
-          headers: {
-            'Content-Range': `bytes ${start}-${size - 1}/${size}`,
-            'Content-Length': size - start,
-          }
-        })
-        console.log(res.status, '--->')
-        if (res.status != 201 && res.status != 202) {
-          // 500 502 503 504 retry
-          if (+res.status >= 500) {
-            await sleep(app.utils.retryTime(3 - retryTimes))
-            continue
-          } else {
-            return this.app.error({ message: res.data?.error?.message || ('An error occurred during upload: ' + name) })
-          }
-        }
-
-        return {
-          id: res.data.id,
-          name: res.data.name,
-          parent_id: id
-        }
-
-      }
+    if (!stream) {
+      return { uploadId, start }
     }
 
-    if (!stream) {
-      return { uploadId, start, done }
-    } else {
-      return await done(stream)
+    let retries = rest.retries || 3
+
+    while (retries-- > 0) {
+
+      let readStream = (typeof stream == 'function') ? await stream(start, { uploadId }) : stream
+
+      if (readStream === undefined) return
+      let res = await app.request(uploadUrl, {
+        method: 'put',
+        data: readStream,
+        contentType: 'stream',
+        signal: rest.signal,
+        // responseType: 'text',
+        headers: {
+          'Content-Range': `bytes ${start}-${size - 1}/${size}`,
+          'Content-Length': size - start,
+        }
+      })
+
+      if (res.status != 201 && res.status != 202) {
+        // 500 502 503 504 retry
+        if (+res.status >= 500) {
+          await sleep(app.utils.retryTime(3 - retries))
+          continue
+        } else {
+          return this.app.error({ message: res.data?.error?.message || ('An error occurred during upload: ' + name) })
+        }
+      }
+
+      return {
+        id: res.data.id,
+        name: res.data.name,
+        parent_id: id
+      }
+
     }
 
   }

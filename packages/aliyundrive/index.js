@@ -586,47 +586,45 @@ class Driver {
       }
     }
 
-    const done = async (stream) => {
-      let readStream = (typeof stream == 'function') ? await stream(start, uploadId) : stream
-      let uploadParts = res.part_info_list
-      let passStream = app.streamReader(readStream, { highWaterMark: 2 * UPLOAD_PART_SIZE })
-      for (let part of uploadParts) {
-        let uploadUrl = part.upload_url
-        rest.updateUploadState?.(upload_id + '-' + file_id + '-' + part.part_number)
-
-        let chunk = await passStream.read(UPLOAD_PART_SIZE)
-        let headers = {
-          'Referer': REFERER,
-          'Origin': 'https://www.aliyundrive.com',
-          'User-Agent': DEFAULT_UA,
-          'Content-Type': ''
-        }
-
-        headers['Content-Length'] = chunk.length
-
-        let res = await app.request(uploadUrl, {
-          method: 'put',
-          data: chunk,
-          contentType: 'buffer',
-          responseType: 'text',
-          headers
-        })
-        if (res.status != 200) {
-          let message = res.data.match(/<Code>([\w\W]+?)<\/Code>/)?.[1] || 'unknown'
-          return this.app.error({ message: 'An error occurred during upload: ' + message })
-        }
-      }
-
-      await this.afterUpload(file_id, upload_id)
-
-      return { id: file_id, name: file_name, parent_id: id }
-    }
-
     if (!stream) {
       return { uploadId, start }
-    } else {
-      return await done(stream)
     }
+
+
+    let readStream = (typeof stream == 'function') ? await stream(start, { uploadId }) : stream
+
+    let uploadParts = res.part_info_list
+    let passStream = app.streamReader(readStream, { highWaterMark: 2 * UPLOAD_PART_SIZE })
+    for (let part of uploadParts) {
+      let uploadUrl = part.upload_url
+      rest.setState?.({ uploadId: upload_id + '-' + file_id + '-' + part.part_number })
+
+      let chunk = await passStream.read(UPLOAD_PART_SIZE)
+      let headers = {
+        'Referer': REFERER,
+        'Origin': 'https://www.aliyundrive.com',
+        'User-Agent': DEFAULT_UA,
+        'Content-Type': ''
+      }
+
+      headers['Content-Length'] = chunk.length
+
+      let res = await app.request(uploadUrl, {
+        method: 'put',
+        data: chunk,
+        contentType: 'buffer',
+        responseType: 'text',
+        headers
+      })
+      if (res.status != 200) {
+        let message = res.data.match(/<Code>([\w\W]+?)<\/Code>/)?.[1] || 'unknown'
+        return this.app.error({ message: 'An error occurred during upload: ' + message })
+      }
+    }
+
+    await this.afterUpload(file_id, upload_id)
+
+    return { id: file_id, name: file_name, parent_id: id }
 
   }
 
@@ -640,7 +638,7 @@ class Driver {
     return false
   }
 
-  async beforeUpload(uploadId, { id, name, size, conflictBehavior, sha1, ...rest } = { conflictBehavior: 'rename' }) {
+  async beforeUpload(uploadId, { id, name, size, conflictBehavior, hash, ...rest } = { conflictBehavior: 1 }) {
     let { drive_id, access_token } = await this.getConfig()
     //resume upload progress
     let partCount = Math.ceil(size / UPLOAD_PART_SIZE)
@@ -688,8 +686,8 @@ class Driver {
       part_info_list: partList,
     }
 
-    if (sha1) {
-      params.pre_hash = sha1.toUpperCase()
+    if (hash?.sha1) {
+      params.pre_hash = hash.sha1.toUpperCase()
     }
     let { data } = await this.app.request.post(`${API_ENDPOINT}/adrive/v2/file/createWithFolders`, {
       headers: {

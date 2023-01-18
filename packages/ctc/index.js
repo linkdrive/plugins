@@ -14,6 +14,8 @@ const API_ENDPOINT = 'https://cloud.189.cn'
 
 const UPLOAD_PART_SIZE = 10 * 1024 * 1024
 
+const DEFAULT_ROOT = '-11'
+
 const crypto = require('crypto')
 
 const NodeRSA = require('node-rsa')
@@ -321,7 +323,7 @@ class Driver {
     hash: 'md5',
     uploadHash: 'md5_chunk',
     key: 'client_id',
-    defaultRoot: '-11',
+    defaultRoot: DEFAULT_ROOT,
 
     guide: [
       {
@@ -494,7 +496,7 @@ class Driver {
    *
    * @api public
    */
-  async get(id, skipDownloadUrl = false) {
+  async get(id, more = false) {
 
     let { cookie, safeRequest } = await this.getConfig()
 
@@ -536,7 +538,18 @@ class Driver {
       result.thumb = data.videoInfo.icon.smallUrl
     }
 
-    if (!skipDownloadUrl && !result.download_url && result.type != 'folder') {
+    // get hash
+    if (more && data.parentId) {
+      let parentData = await this.list(data.parentId)
+      if (parentData?.files) {
+        let hit = parentData.files.find(i => i.id == id)
+        if (hit.md5) {
+          result.extra.md5 = hit.md5
+        }
+      }
+    }
+
+    if (!more && !result.download_url && result.type != 'folder') {
       let { url, max_age } = await this.get_download_url(id, 'https:' + data.downloadUrl)
       if (url) {
         result.download_url = url
@@ -818,12 +831,6 @@ class Driver {
     return { id: res.file.userFileId }
   }
 
-  async fastUpload(id, { size, name, md5 }) {
-    if (md5) {
-
-    }
-  }
-
   async upload(id, stream, { size, name, manual, ...rest }) {
     if (size <= UPLOAD_PART_SIZE) {
       return await this.singleUpload(id, { size, name, stream, ...rest })
@@ -847,58 +854,51 @@ class Driver {
     //   uploadFileId,
     // })
 
-    const done = async (customStream) => {
+    if (!stream) {
+      return { uploadId: uploadFileId, start }
+    }
 
-      let part = Math.ceil(size / UPLOAD_PART_SIZE)
-      let passStream = app.streamReader(customStream || stream, { highWaterMark: 2 * UPLOAD_PART_SIZE })
-      let md5chunk = []
-      let md5sum = crypto.createHash('md5')
-      for (let i = 1; i <= part; i++) {
-        let buffer = await passStream.read(UPLOAD_PART_SIZE)
-        let chunk_hash = md5(buffer).toUpperCase()
-        let chunk_base64 = Buffer.from(chunk_hash, 'hex').toString('base64')
+    let part = Math.ceil(size / UPLOAD_PART_SIZE)
+    let passStream = app.streamReader(customStream || stream, { highWaterMark: 2 * UPLOAD_PART_SIZE })
+    let md5chunk = []
+    let md5sum = crypto.createHash('md5')
+    for (let i = 1; i <= part; i++) {
+      let buffer = await passStream.read(UPLOAD_PART_SIZE)
+      let chunk_hash = md5(buffer).toUpperCase()
+      let chunk_base64 = Buffer.from(chunk_hash, 'hex').toString('base64')
 
-        md5chunk.push(chunk_hash)
-        md5sum.update(buffer)
+      md5chunk.push(chunk_hash)
+      md5sum.update(buffer)
 
-        let { data } = await this.createRequest('/person/getMultiUploadUrls', {
-          partInfo: `${i}-${chunk_base64}`,
-          uploadFileId,
-        })
-
-        let uploadData = data['uploadUrls'][`partNumber_${i}`]
-
-        let res = await app.request(uploadData.requestURL, {
-          method: 'put',
-          data: buffer,
-          contentType: 'buffer',
-          responseType: 'text',
-          headers: parseHeaders(uploadData.requestHeader)
-        })
-
-        if (res.status != 200) app.error({ message: 'a error occurred during upload.' })
-      }
-
-      let uniqueIdentifier = md5sum.digest('hex')
-
-      // commit
-      let { data: res } = await this.createRequest('/person/commitMultiUploadFile', {
+      let { data } = await this.createRequest('/person/getMultiUploadUrls', {
+        partInfo: `${i}-${chunk_base64}`,
         uploadFileId,
-        fileMd5: uniqueIdentifier,
-        //fileSize<=10MB,fileMD5 should equal sliceMd5,
-        sliceMd5: md5(md5chunk.join('\n')),
-        lazyCheck: 1,
       })
-      return { id: res.file.userFileId }
+
+      let uploadData = data['uploadUrls'][`partNumber_${i}`]
+
+      let res = await app.request(uploadData.requestURL, {
+        method: 'put',
+        data: buffer,
+        contentType: 'buffer',
+        responseType: 'text',
+        headers: parseHeaders(uploadData.requestHeader)
+      })
+
+      if (res.status != 200) app.error({ message: 'a error occurred during upload.' })
     }
 
-    if (manual) {
-      return {
-        uploadId: uploadFileId, start, done
-      }
-    } else {
-      return await done(stream)
-    }
+    let uniqueIdentifier = md5sum.digest('hex')
+
+    // commit
+    let { data: res } = await this.createRequest('/person/commitMultiUploadFile', {
+      uploadFileId,
+      fileMd5: uniqueIdentifier,
+      //fileSize<=10MB,fileMD5 should equal sliceMd5,
+      sliceMd5: md5(md5chunk.join('\n')),
+      lazyCheck: 1,
+    })
+    return { id: res.file.userFileId }
   }
 
   async monitor(params, timeout = 5 * 1000) {

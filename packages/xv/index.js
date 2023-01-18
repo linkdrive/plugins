@@ -48,6 +48,7 @@ class Driver {
     localSearch: false,
     protocol: "xv",
     cache: false,
+    readonly: true,
     guide: [
       { key: 'zone', label: '地区 / Zone', help: '不同国家对应不同推荐内容，填写 cn/en/jp 等', type: 'string', required: false },
       { key: 'group', label: '页码分组', type: 'boolean', help: '', required: false },

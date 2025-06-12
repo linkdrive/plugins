@@ -3,7 +3,7 @@
 // @namespace    sharelist.plugin.xv
 // @version      0.1.0
 // @license      MIT
-// @description  sharelist 演示插件，用于挂载全球访问量排名前10的某网站
+// @description  For mounting a top-10 globally visited website
 // @author       reruin@gmail.com
 // @supportURL   https://github.com/reruin/sharelist
 // @updateURL    https://raw.githubusercontent.com/linkdrive/plugins/master/packages/xv/index.js
@@ -30,7 +30,7 @@ const getListUrl = (id, sk, page = 1) => {
     key = tag + '/' + page
   }
   else if (/^\/c\//.test(tag)) {
-    key = tag.replace('c/', 'c/' + page + '/')
+    key = tag + '/' + page
   }
   else if (/^\/\?k=/.test(tag)) {
     key = tag + '&p=' + page
@@ -52,6 +52,12 @@ class Driver {
     guide: [
       { key: 'zone', label: '地区 / Zone', help: '不同国家对应不同推荐内容，填写 cn/en/jp 等', type: 'string', required: false },
       { key: 'group', label: '页码分组', type: 'boolean', help: '', required: false },
+      { key: 'quality', label: '默认清晰度', 
+        options: [
+          { value: 'LD', label: 'Low' },
+          { value: 'HD', label: 'High' },
+        ]
+        , help: '下载/预览时的清晰度', required: false },
       { key: 'proxy', label: '代理地址', help: '设置后该挂载盘的所有请求均使用此代理。支持HTTP/HTTPS', type: 'string', required: false },
     ]
   }
@@ -95,7 +101,6 @@ class Driver {
 
     //使用自然分页
     nextPage = nextPage || 1
-
     if (!id) {
       if (nextPage > 1) return { files: [] }
       else return {
@@ -108,7 +113,6 @@ class Driver {
 
 
     let url = getListUrl(id.substring(1), search, nextPage)
-
     let res = await this.app.request.get(url, {
       proxy: this.config.proxy,
       responseType: 'text',
@@ -134,8 +138,7 @@ class Driver {
         thumb: $1,
       })
     })
-
-    return { id, files, nextPage: nextPage++ }
+    return { id, files, nextPage: nextPage+1 }
   }
 
 
@@ -212,15 +215,24 @@ class Driver {
 
     let name = (data.match(/setVideoTitle\('([^'"]+?)'/) || ['', ''])[1]
 
+    let quality = this.config.quality
+    
+    const sources = [
+      { name: 'LD', src: url_low },
+      { name: 'HD', src: url_high },
+    ]
+    const source = sources.find(i => i.name == quality) ?? sources[0]
+    
+    let size = await this.getSize(source.src)
     let result = {
       id: id,
       name: `${name}.mp4`,
-      size: 0,
+      size,
       type: 'file',
       ctime: Date.now(),
       mtime: Date.now(),
       thumb,
-      download_url: url_low,
+      download_url: source.src,
       extra: {
         parent_id: 'root',
         category: 'video',
@@ -242,6 +254,20 @@ class Driver {
     }
 
     return result
+  }
+
+  async getSize(url){
+    const controller = new AbortController();
+
+    const res = await this.app.request.get(url, {
+      responseType: 'blob',
+      'user-agent': UA,
+      proxy: this.config.proxy,
+      signal: controller.signal 
+    })
+    const size = +(res.headers['content-length'] ?? '0')
+    controller.abort();
+    return size
   }
 
 }

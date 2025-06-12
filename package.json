@@ -2,11 +2,12 @@
   "name": "@linkdrive/plugins",
   "repository": "https://github.com/reruin/sharelist",
   "license": "MIT",
+  "private": true,
   "workspaces": [
     "packages/*"
   ],
   "engines": {
-    "node": ">=14.0.0"
+    "node": ">=16.0.0"
   },
   "scripts": {
     "release": "node scripts/release.js",
@@ -23,5 +24,5 @@
     "prompts": "^2.4.1",
     "semver": "^7.3.5"
   },
-  "version": "2022.9.30"
+  "version": "2025.6.12"
 }
